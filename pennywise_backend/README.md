@@ -1,66 +1,206 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PennyWise API Backend
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Welcome to the **PennyWise** API backend, the server-side component of the PennyWise expense tracking application. This backend is built with Laravel and provides RESTful APIs for managing expenses, budgets, and other financial data. The backend is containerized using Docker, making it easy to set up and deploy alongside the Flutter frontend.
 
-## About Laravel
+## Project Structure
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```plaintext
+pennywise_backend/
+│
+├── docker-files/
+│   ├── nginx/
+│   │   ├── certs/             # SSL certificates (to be generated locally)
+│   │   └── ...
+│   └── ...
+├── docker-compose.yml         # Docker Compose file for orchestrating containers
+├── app/                       # Laravel application files
+├── .env.example               # Example environment configuration file
+├── .env                       # Environment configuration file (to be set up)
+├── README.md                  # This README file
+└── ...                        # Other backend-related files
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prerequisites
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+-   **Docker**: Ensure Docker is installed on your machine. [Install Docker](https://docs.docker.com/get-docker/)
+-   **Make**: Make sure you have `make` installed, as it will be used to manage commands for the API.
 
-## Learning Laravel
+## Setting Up the API Backend
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Step 1: SSL Certificate Setup
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+To secure communication between your frontend and backend, you need to generate SSL certificates. We use `mkcert` for this purpose.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. **Install mkcert** (if not already installed):
 
-## Laravel Sponsors
+    - For macOS:
+        ```bash
+        brew install mkcert
+        brew install nss # if you use Firefox
+        ```
+    - For Linux and Windows, follow the instructions at [mkcert's repository](https://github.com/FiloSottile/mkcert).
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+2. **Generate a Local Certificate**:
 
-### Premium Partners
+    ```bash
+    mkcert -install
+    mkcert localhost 127.0.0.1 ::1
+    ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+3. **Place the Generated Files**:
+
+    - Move the generated `.pem` and `.key` files to the `./pennywise_backend/docker-files/nginx/certs/` directory.
+
+4. **Ensure Correct File Naming**:
+
+    - After moving the files, ensure that the file names match those specified in your Nginx configuration and Docker Compose file. This is crucial for Nginx to correctly find and use the SSL certificates.
+
+    Here is an example of the relevant Nginx server block configuration:
+
+    ```nginx
+    server {
+        listen 443 ssl;
+        index index.php index.html;
+
+        server_name localhost;
+        error_log /var/log/nginx/error.log;
+        access_log /var/log/nginx/access.log;
+
+        root /var/www/pennywise/public;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+            gzip_static on;
+        }
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            fastcgi_split_path_info ^(.+\.php)(/.+)$;
+            fastcgi_pass app:9000;
+            fastcgi_index index.php;
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param PATH_INFO $fastcgi_path_info;
+        }
+
+        ssl_certificate /etc/nginx/certs/localhost+2.pem;     # Ensure the file name matches
+        ssl_certificate_key /etc/nginx/certs/localhost+2-key.pem; # Ensure the file name matches
+    }
+    ```
+
+    And here’s how the SSL volumes are defined in the Docker Compose file:
+
+    ```yaml
+    pennywise_webserver:
+        build:
+            context: .
+            dockerfile: ./docker-files/nginx/Dockerfile
+        container_name: pennywise_webserver
+        restart: unless-stopped
+        depends_on:
+            - db
+            - app
+
+        ports:
+            - "8888:80"
+            - "8889:443"
+
+        volumes:
+            - ./:/var/www/pennywise
+            - ./docker-files/nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf
+            # Mount SSL certs
+            - ./docker-files/nginx/certs/localhost+2.pem:/etc/nginx/certs/localhost+2.pem # Ensure the file name matches
+            - ./docker-files/nginx/certs/localhost+2-key.pem:/etc/nginx/certs/localhost+2-key.pem # Ensure the file name matches
+
+        networks:
+            - pennywise
+    ```
+
+    > **Important**: The names of the SSL certificate and key files (e.g., `localhost+2.pem` and `localhost+2-key.pem`) must exactly match those specified in both the Nginx configuration and the Docker Compose volumes section. If the names differ, Nginx will not be able to find the certificates, and SSL will not work.
+
+### Step 2: Environment Variables
+
+Before setting up the backend, follow these steps to configure the environment:
+
+1. **Copy the example `.env` file**:
+
+    - Run the following command to create your `.env` file from the provided `.env.example`:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2. **Edit the `.env` file**:
+    - Open the `.env` file and set the following environment variables:
+    ```plaintext
+    DB_DATABASE=your_database_name
+    DB_USERNAME=your_database_username
+    DB_PASSWORD=your_database_password
+    ```
+
+### Step 3: Setting Up and Running the API
+
+1. **Set Up the API**:
+
+    - Navigate to the root directory of the project and run the following command to build the Docker container and set up the API:
+
+    ```bash
+    make build-api
+    ```
+
+2. **Start the API**:
+
+    - Start the API by running:
+
+    ```bash
+    make up-api
+    ```
+
+3. **Enter the API Shell and Install Dependencies**:
+
+    - After the API container is up and running, you need to enter the API shell and install the necessary PHP dependencies using Composer:
+
+    ```bash
+    make shell
+    composer install
+    ```
+
+4. **View Logs**:
+
+    - You can monitor the real-time logs of the API container using:
+
+    ```bash
+    make logs-api
+    ```
+
+5. **Stop the API**:
+    - When you are done, you can stop and remove the API container with:
+    ```bash
+    make down-api
+    ```
+
+## Communication with the Frontend
+
+The API provides RESTful endpoints that the Flutter frontend interacts with. Ensure that the Flutter app is configured to communicate with the backend API, typically at `https://localhost:8889` (or the appropriate URL if deployed).
+
+## Additional Commands
+
+### Makefile Commands for the API
+
+-   **build-api**: Build the Docker container for the PennyWise API without using the cache.
+-   **up-api**: Start the PennyWise API Docker container in detached mode.
+-   **down-api**: Stop and remove the PennyWise API Docker container.
+-   **logs-api**: View real-time logs from the PennyWise API Docker container.
+-   **shell**: Access the shell of the API container to run commands like `composer install`.
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Contributions are welcome! Please fork the repository and submit a pull request. Make sure to follow the code style guidelines and provide clear commit messages.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For inquiries, suggestions, or support, please reach out to us at support@pennywiseapp.com.

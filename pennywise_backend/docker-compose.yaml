@@ -1,0 +1,100 @@
+networks:
+  pennywise:
+    driver: "bridge"
+
+services:
+  #PHP-FPM service
+  app:
+    build:
+      context: .
+      dockerfile: ./docker-files/php/8.2/Dockerfile
+    container_name: pennywise
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www/pennywise
+    depends_on:
+      - db
+      - redis
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./:/var/www/pennywise
+      - ./docker-files/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+
+    networks:
+      - pennywise
+
+  #   #NGINX service
+  pennywise_webserver:
+    build:
+      context: .
+      dockerfile: ./docker-files/nginx/Dockerfile
+    container_name: pennywise_webserver
+    restart: unless-stopped
+    depends_on:
+      - db
+      - app
+
+    ports:
+      - "8888:80"
+      - "8889:443"
+
+    volumes:
+      - ./:/var/www/pennywise
+      - ./docker-files/nginx/conf.d/app.conf:/etc/nginx/conf.d/app.conf
+      #mount ssl certs
+      - ./docker-files/nginx/certs/localhost+2.pem:/etc/nginx/certs/localhost+2.pem
+      - ./docker-files/nginx/certs/localhost+2-key.pem:/etc/nginx/certs/localhost+2-key.pem
+
+    networks:
+      - pennywise
+
+  db:
+    container_name: pennywise_db
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    restart: always
+    tty: true
+    ports:
+      - "8890:3306"
+
+    volumes:
+      - ./storage/dbdata:/var/lib/mysql
+      - ./docker-files/mysql/mysql.cnf:/etc/mysql/mysql.cnf
+      # - ./docker-files/mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+    networks:
+      - pennywise
+
+  # setup db management interface
+  adminer:
+    container_name: pennywise_adminer
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8891:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    networks:
+      - pennywise
+
+  #setup redis
+  redis:
+    container_name: pennywise_redis
+    image: redis:alpine
+    env_file:
+      - .env
+    ports:
+      - "8892:6379"
+    volumes:
+      - ./storage/redis/data:/data
+    networks:
+      - pennywise
