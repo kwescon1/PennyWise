@@ -7,10 +7,11 @@
 ```plaintext
 pennywise/
 │
-├── API/                  # Dockerized Laravel API backend
+├── pennywise_backend/     # Dockerized Laravel API backend
 │   ├── dockerfiles
 │   ├── docker-compose.yml
 │   ├── app/              # Laravel application files
+│   ├── README.md         # Detailed setup instructions for the backend
 │   └── ...               # Other backend-related files
 │
 ├── pennywise/            # Flutter frontend
@@ -68,7 +69,7 @@ To enable SSL for the Dockerized Laravel API, each developer needs to generate t
 
 3. **Place the Generated Files**:
 
-   - Move the generated `.pem` and `.key` files to the appropriate directory within the project (e.g., `./API/certs/`).
+   - Move the generated `.pem` and `.key` files to the appropriate directory within the project (e.g., `./pennywise_backend/certs/`).
 
 4. **Configure Docker**:
 
@@ -86,7 +87,6 @@ To enable SSL for the Dockerized Laravel API, each developer needs to generate t
 You can set up the entire project, including the API and Flutter app, using the `Makefile` commands.
 
 1. **Set Up the Project**:
-
    This command will build the Docker container for the Laravel API and install the necessary dependencies for the Flutter app.
 
    ```bash
@@ -94,7 +94,6 @@ You can set up the entire project, including the API and Flutter app, using the 
    ```
 
 2. **Start the Project**:
-
    This command will start the Laravel API container and run the Flutter app on your connected device or emulator.
 
    ```bash
@@ -102,9 +101,7 @@ You can set up the entire project, including the API and Flutter app, using the 
    ```
 
 3. **Stop the Project**:
-
    This command will stop the Laravel API container.
-
    ```bash
    make stop
    ```
@@ -132,9 +129,13 @@ The `Makefile` in the root directory includes the following commands:
   - `make start`: Start both the API and the Flutter app.
   - `make stop`: Stop the Laravel API container.
 
+### Backend Setup
+
+For a more complete setup and detailed configuration of the backend, please refer to the [README in the pennywise_backend directory](./pennywise_backend/README.md).
+
 ### Communication Between Frontend and Backend
 
-The Flutter app communicates with the Laravel API via RESTful API calls. Ensure that your API endpoints are correctly configured in the Flutter app's codebase, pointing to `http://localhost:9000` (or the appropriate server URL if deployed).
+The Flutter app communicates with the Laravel API via RESTful API calls. Ensure that your API endpoints are correctly configured in the Flutter app's codebase, pointing to `https://localhost:8889` (or the appropriate server URL if deployed).
 
 ## Contributing
 
