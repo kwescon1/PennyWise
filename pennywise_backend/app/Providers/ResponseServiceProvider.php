@@ -26,21 +26,23 @@ class ResponseServiceProvider extends ServiceProvider
     {
         JsonResource::withoutWrapping();
 
-        $response->macro('success', function ($data) {
+        $response->macro('success', function ($message = null, $data) {
             return response()->json([
+                'message' => $message ?? __('app.operation_successful'),
                 'data' => $data ?: null,
             ], \Illuminate\Http\Response::HTTP_OK);
         });
 
-        $response->macro('created', function ($data) {
+        $response->macro('created', function ($message = null, $data = null) {
             return response()->json([
+                'message' => $message ?? __('app.resource_created'),
                 'data' => $data ?: null,
             ], \Illuminate\Http\Response::HTTP_CREATED);
         });
 
         $response->macro('notfound', function ($error) {
             if ($error instanceof NotFoundHttpException) {
-                $error = 'Resource not found';
+                $error = __('app.resource_not_found');
             }
 
             return response()->json([
