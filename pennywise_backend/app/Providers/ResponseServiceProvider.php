@@ -30,38 +30,35 @@ class ResponseServiceProvider extends ServiceProvider
             return response()->json([
                 'message' => $message ?? __('app.operation_successful'),
                 'data' => $data ?: null,
-            ], \Illuminate\Http\Response::HTTP_OK);
+            ], Response::HTTP_OK);
         });
 
         $response->macro('created', function ($message = null, $data = null) {
             return response()->json([
                 'message' => $message ?? __('app.resource_created'),
                 'data' => $data ?: null,
-            ], \Illuminate\Http\Response::HTTP_CREATED);
+            ], Response::HTTP_CREATED);
         });
 
         $response->macro('notfound', function ($error) {
-            if ($error instanceof NotFoundHttpException) {
-                $error = __('app.resource_not_found');
-            }
-
             return response()->json([
-                'error' => $error,
-            ], \Illuminate\Http\Response::HTTP_NOT_FOUND);
+                'error' => $error ?? __('app.resource_not_found'),
+            ], Response::HTTP_NOT_FOUND);
         });
 
         $response->macro('error', function ($error, $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR) {
+
             // If the exception is a ValidationException, return the validation errors
             if ($error instanceof ValidationException) {
                 return response()->json([
-                    'message' => $error->getMessage(),
+                    'message' => __('app.validation_failed'),
                     'errors' => $error->errors(),
-                ], $statusCode);
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
             // Default error handling
             return response()->json([
-                'error' => $error instanceof \Exception ? $error->getMessage() : $error,
+                'error' =>  $error->getMessage()
             ], $statusCode);
         });
     }
