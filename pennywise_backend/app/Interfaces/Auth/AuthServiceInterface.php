@@ -8,4 +8,5 @@ interface AuthServiceInterface
 {
 
     public function register(array $data): array;
+    public function login(User $user): array;
 }

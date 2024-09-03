@@ -2,7 +2,7 @@
 
 namespace App\Services\Auth;
 
-use App\Http\Resources\RegisterUserResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Interfaces\Auth\AuthServiceInterface;
 
@@ -25,7 +25,27 @@ class AuthService implements AuthServiceInterface
         $token = $this->generateUserToken($user);
 
         return [
-            'user' => new RegisterUserResource($user),
+            'user' => new UserResource($user),
+            'token' => $token
+        ];
+    }
+    /**
+     * Login an existing user
+     *
+     * This method logs in an existing user using the provided data, generates an auth
+     * token for the user, and returns the user resource
+     * along with the token.
+     *
+     * @param array $data The validated user registration data.
+     * @return array An array containing the registered user resource and the authentication token.
+     */
+    public function login(User $user): array
+    {
+
+        $token = $this->generateUserToken($user);
+
+        return [
+            'user' => new UserResource($user),
             'token' => $token
         ];
     }

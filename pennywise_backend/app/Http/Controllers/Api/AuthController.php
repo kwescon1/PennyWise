@@ -33,6 +33,32 @@ class AuthController extends Controller
     {
         $result = $this->authService->register($request->validated());
 
-        return response()->created(__('app.registration_successful'), $result);
+        return response()->created(__('app.registration_successful_verify'), $result);
+    }
+
+    /**
+     * Handle the user login process.
+     *
+     * This method processes the login request by validating the provided credentials
+     * through the LoginUserRequest. If validation passes, the user's details are retrieved
+     * and passed to the AuthService for token generation and any additional login logic.
+     * The response includes a message indicating whether the user's email is verified or not.
+     *
+     * @param LoginUserRequest $request The validated login request containing the user's credentials.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the login result and a success message.
+     */
+    public function login(LoginUserRequest $request): \Illuminate\Http\JsonResponse
+    {
+        // The validation process is handled within the form request.
+        // Here we just retrieve the user and proceed with token generation.
+        $user = $request->validatedUser();
+
+        $results = $this->authService->login($user);
+
+
+        return response()->success(
+            $user->email_verified_at ? __('app.login_successful') : __('app.login_successful_verify'),
+            $results
+        );
     }
 }
