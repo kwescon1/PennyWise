@@ -1,7 +1,7 @@
 <?php
 
 return [
-
+    // feat: Add localization language lines for common application messages
     /*
     |--------------------------------------------------------------------------
     | Application Language Lines
@@ -13,9 +13,13 @@ return [
     |
     */
 
-    'registration_successful' => 'User registered successfully',
-    'operation_successful' => 'Operation successful',
-    'resource_created' => 'Resource created',
-    'resource_not_found' => 'Resource not found',
+    'registration_successful' => 'Registration successful!',
+    'registration_successful_verify' => 'Registration successful! Please verify account with OTP',
+    'login_successful' => 'Login successful!',
+    'login_successful_verify' => 'Login successful! Please verify account with OTP',
+    'operation_successful' => 'Operation successful!',
+    'resource_created' => 'Resource created!',
+    'resource_not_found' => 'Resource not found!',
+    'validation_failed' => 'Validation failed!'
 
 ];
