@@ -5,8 +5,9 @@ namespace App\Providers;
 use App\Services\Auth\AuthService;
 use Illuminate\Support\ServiceProvider;
 use App\Interfaces\Auth\AuthServiceInterface;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class AppServiceProvider extends ServiceProvider
+class AppServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
      * Register any application services.
@@ -17,10 +18,20 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Get the services provided by the provider.
+     *
+     * @return array<int, string>
+     */
+    public function provides(): array
+    {
+        return [AuthServiceInterface::class];
+    }
+
+    /**
      * Bootstrap any application services.
      */
     public function boot(): void
     {
-        //
+        // Bootstrap any application services, if necessary
     }
 }
