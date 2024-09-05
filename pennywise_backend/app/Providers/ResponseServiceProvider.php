@@ -26,10 +26,10 @@ class ResponseServiceProvider extends ServiceProvider
     {
         JsonResource::withoutWrapping();
 
-        $response->macro('success', function ($message = null, $data) {
+        $response->macro('success', function ($message = null, $data = null) {
             return response()->json([
                 'message' => $message ?? __('app.operation_successful'),
-                'data' => $data ?: null,
+                'data' => $data,
             ], Response::HTTP_OK);
         });
 
