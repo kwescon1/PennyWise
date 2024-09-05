@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Http\Requests\Auth\LoginUserRequest;
-use App\Http\Requests\Auth\RegisterUserRequest;
+use App\Http\Requests\Auth\VerifyUserRequest;
 use App\Interfaces\Auth\AuthServiceInterface;
-use Illuminate\Http\Request;
+use App\Http\Requests\Auth\RegisterUserRequest;
 
 class AuthController extends Controller
 {
@@ -31,9 +33,15 @@ class AuthController extends Controller
      */
     public function register(RegisterUserRequest $request): \Illuminate\Http\JsonResponse
     {
-        $result = $this->authService->register($request->validated());
+        $results = $this->authService->register($request->validated(), $request->generateOtp());
 
-        return response()->created(__('app.registration_successful_verify'), $result);
+        $userResource = new UserResource($results['user']);
+        $token = $results['token'];
+
+        return response()->created(__('app.registration_successful_verify'), [
+            'user' => $userResource,
+            'token' => $token
+        ]);
     }
 
     /**
@@ -55,10 +63,38 @@ class AuthController extends Controller
 
         $results = $this->authService->login($user);
 
+        $userResource = new UserResource($results['user']);
+        $token = $results['token'];
+
 
         return response()->success(
             $user->email_verified_at ? __('app.login_successful') : __('app.login_successful_verify'),
-            $results
+            [
+                'user' => $userResource,
+                'token' => $token
+            ]
         );
     }
+
+    public function otp(VerifyUserRequest $request): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->getAuthenticatedUser();
+        $code = $request->generateOtp();
+
+        $this->authService->sendOtp($user, $code);
+
+        return response()->success(__('app.otp_sent_success'));
+    }
+
+    public function verify(VerifyUserRequest $request): \Illuminate\Http\JsonResponse
+    {
+        $otp = $request->validatedOtp();
+
+        $user = $request->getAuthenticatedUser();
+
+        $user = $this->authService->verifyOtp($user, $otp);
+
+        return response()->success(__('app.verification_success'), ['user' => new UserResource($user)]);
+    }
 }
+// 838736
