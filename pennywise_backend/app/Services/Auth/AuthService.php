@@ -67,12 +67,12 @@ class AuthService implements AuthServiceInterface
      * @param string $code The OTP code generated.
      * @return void
      */
-    public function sendOtp(User $user, string $code): void
+    public function sendOtp(User $user, string $code, $type = OtpType::VERIFICATION_CODE): void
     {
         // Store OTP details
         Otp::create([
             'user_id' => $user->id,
-            'type' => OtpType::VERIFICATION_CODE,
+            'type' => $type,
             'code' => $code,
         ]);
 
