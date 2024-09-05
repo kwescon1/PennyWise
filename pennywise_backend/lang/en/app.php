@@ -20,6 +20,10 @@ return [
     'operation_successful' => 'Operation successful!',
     'resource_created' => 'Resource created!',
     'resource_not_found' => 'Resource not found!',
-    'validation_failed' => 'Validation failed!'
-
+    'validation_failed' => 'Validation failed!',
+    'auth_user_not_found' => 'User not found!',
+    'opt_mail_subject' => 'Your ' . config('app.name') . ' Verification Code',
+    'otp_sent_success' => 'Verification Code Sent!',
+    'invalid_otp' => 'Invalid Verification Code!',
+    'verification_success' => 'Verification successful!',
 ];
