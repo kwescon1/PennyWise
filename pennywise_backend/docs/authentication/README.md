@@ -47,13 +47,13 @@ Registers a new user and generates an authentication token. Sends an OTP to the 
 
 ### **Response:**
 
--   **Success**: HTTP `200 OK`
+-   **Success**: HTTP `201 Created`
     -   User object and auth token
 
 ```json
 {
     "user": {
-        "id": 1,
+        "id": "uuid string",
         "firstname": "John",
         "lastname": "Doe",
         "email": "john@example.com",
@@ -104,7 +104,7 @@ Authenticates an existing user and generates an authentication token.
 
 ### **Response:**
 
--   **Success**: HTTP `201 Created`
+-   **Success**: HTTP `200 OK`
     -   User object and auth token
 
 ```json
