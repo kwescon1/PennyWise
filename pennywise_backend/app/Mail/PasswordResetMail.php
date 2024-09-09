@@ -8,13 +8,12 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-class PasswordResetMail extends Mailable implements ShouldQueue
+class PasswordResetMail extends Mailable
 {
-    public User $user;
-    public string $otpCode;
-    public bool $isRequest;
+    public $user;
+    public $otpCode;
+    public $isRequest;
 
     use Queueable, SerializesModels;
 

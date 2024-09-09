@@ -6,14 +6,13 @@ use App\Models\Otp;
 use App\Models\User;
 use App\Enums\Auth\OtpType;
 use Illuminate\Support\Carbon;
-use App\Mail\PasswordResetMail;
-use App\Mail\OtpVerificationMail;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
+use App\Jobs\Auth\SendPasswordResetEmail;
+use App\Jobs\Auth\SendOtpVerificationEmail;
 use App\Interfaces\Auth\AuthServiceInterface;
 use Illuminate\Validation\ValidationException;
+use App\Jobs\Auth\SendPasswordResetSucceessfulEmail;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class AuthService implements AuthServiceInterface
@@ -122,11 +121,11 @@ class AuthService implements AuthServiceInterface
     private function dispatchEmail(User $user, string $code, OtpType $type, bool $isRequest): void
     {
         if ($type !== OtpType::PASSWORD_RESET_CODE) {
-            // Send OTP Verification email for account verification or other purposes
-            Mail::to($user)->send(new OtpVerificationMail($user, $code));
+            // Dispatch the OTP Verification email job
+            dispatch(new SendOtpVerificationEmail($user, $code));
         } else {
-            // Send Password Reset email, includes user request flag for customization
-            Mail::to($user)->send(new PasswordResetMail($user, $code, $isRequest));
+            // Dispatch the Password Reset email job
+            dispatch(new SendPasswordResetEmail($user, $code, $isRequest));
         }
     }
 
@@ -200,6 +199,9 @@ class AuthService implements AuthServiceInterface
 
             // forget cache
             Cache::forget(self::HASH_METHOD . self::AUTH_CACHE_KEY . $data['otp']);
+
+            // Dispatch the success email job (queueing it)
+            dispatch(new SendPasswordResetSucceessfulEmail($user));
 
             // Return the updated user object
             return $user;
