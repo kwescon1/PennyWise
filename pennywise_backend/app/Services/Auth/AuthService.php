@@ -6,14 +6,22 @@ use App\Models\Otp;
 use App\Models\User;
 use App\Enums\Auth\OtpType;
 use Illuminate\Support\Carbon;
+use App\Mail\PasswordResetMail;
 use App\Mail\OtpVerificationMail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use App\Interfaces\Auth\AuthServiceInterface;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class AuthService implements AuthServiceInterface
 {
+    public const AUTH_CACHE_KEY = "Auth_";
+    public const AUTH_CACHE_SECONDS = 600; // 10 mins
+    public const HASH_METHOD = 'sha256';
+    public const RETRY_SECONDS = 1800; // 30 mins
     /**
      * Register a new user and generate an authentication token.
      *
@@ -65,40 +73,81 @@ class AuthService implements AuthServiceInterface
      *
      * @param User $user The user for whom the OTP is being generated.
      * @param string $code The OTP code generated.
+     * @param string $type The type of OTP being generated (default: verification).
+     * @param bool $isRequest A flag to determine if the OTP request is for resetting a password.
      * @return void
      */
-    public function sendOtp(User $user, string $code, $type = OtpType::VERIFICATION_CODE): void
+    public function sendOtp(User $user, string $code, OtpType $type = OtpType::VERIFICATION_CODE, bool $isRequest = false): void
     {
-        // Store OTP details
+
+        // check for spam and throttle
+        $tries = 3;
+        $time = Carbon::now()->subMinutes(30);
+
+        // Count the number of OTPs created in the last 30 minutes for this user and type
+        $count = Otp::where(['user_id' => $user->id, 'type' => $type, 'is_active' => Otp::STATUS_ACTIVE])
+            ->where('created_at', '>=', $time)
+            ->count();
+
+        if ($count >= $tries) {
+            throw new TooManyRequestsHttpException(
+                self::RETRY_SECONDS, // Retry after 60 seconds
+                'You have exceeded the allowed number of attempts. Please try again later.'
+            );
+        }
+
+
+        // Store OTP details in the database
         Otp::create([
             'user_id' => $user->id,
             'type' => $type,
             'code' => $code,
+            'expires_at' => Carbon::now()->addMinutes(10),
         ]);
 
-        // Dispatch OTP email
-        Mail::to($user)->send(new OtpVerificationMail($user, $code));
+        // Dispatch OTP email based on the OTP type
+        $this->dispatchEmail($user, $code, $type, $isRequest);
+    }
+
+    /**
+     * Dispatch the appropriate email based on OTP type.
+     *
+     * @param User $user The user to whom the OTP email will be sent.
+     * @param string $code The OTP code to include in the email.
+     * @param string $type The type of OTP (e.g., verification, password reset).
+     * @param bool $isRequest A flag to determine if the OTP request is for resetting a password.
+     *
+     * @return void
+     */
+    private function dispatchEmail(User $user, string $code, OtpType $type, bool $isRequest): void
+    {
+        if ($type !== OtpType::PASSWORD_RESET_CODE) {
+            // Send OTP Verification email for account verification or other purposes
+            Mail::to($user)->send(new OtpVerificationMail($user, $code));
+        } else {
+            // Send Password Reset email, includes user request flag for customization
+            Mail::to($user)->send(new PasswordResetMail($user, $code, $isRequest));
+        }
     }
 
     /**
      * Verify the OTP for the given user.
      *
-     * This method checks if the provided OTP for the user is valid and active.
-     * If valid, it updates the user's email verification timestamp and deactivates the OTP.
-     * If the OTP is invalid, a validation exception is thrown.
+     * This method checks if the provided OTP for the user is valid, active, and has not expired.
+     * By default, it checks OTPs of type OtpType::VERIFICATION_CODE unless specified otherwise.
+     * If the OTP is valid, it updates the user's email verification timestamp and deactivates the OTP.
+     * If the OTP is invalid or expired, a validation exception is thrown.
      *
      * @param  \App\Models\User  $user  The user for whom the OTP is being verified.
      * @param  int  $otp  The OTP code to be verified.
-     * @return \App\Models\User  The user object after verification.
-     * @throws \Illuminate\Validation\ValidationException If the OTP is invalid.
+     * @param  OtpType  $type  The type of OTP being verified. Defaults to OtpType::VERIFICATION_CODE.
+     * @return \App\Models\User  The user object after successful verification.
+     * @throws \Illuminate\Validation\ValidationException If the OTP is invalid or expired.
      */
-    public function verifyOtp(User $user, int $otp): User
+    public function verifyOtp(User $user, int $otp, OtpType $type = OtpType::VERIFICATION_CODE): User
     {
-        // Retrieve the OTP that matches the user ID, code, and is still active
-        $otpCode = Otp::whereUserId($user->id)
-            ->whereCode($otp)
-            ->whereIsActive(Otp::STATUS_ACTIVE)
-            ->first();
+        // Retrieve the OTP that matches the user ID, code, and is still active and not expired
+        $otpCode = $this->getValidOtp($user->id, $otp, $type);
 
         // If no valid OTP is found, throw a validation exception
         if (!$otpCode) {
@@ -111,13 +160,46 @@ class AuthService implements AuthServiceInterface
         return DB::transaction(function () use ($user, $otpCode) {
             // Update the user's email_verified_at field to the current timestamp
             $user->update([
-                'email_verified_at' => Carbon::now(),
+                'email_verified_at' => now(),
             ]);
 
             // Deactivate the OTP by setting is_active to inactive
             $otpCode->update([
                 'is_active' => Otp::STATUS_INACTIVE,
             ]);
+
+            // Return the updated user object
+            return $user;
+        });
+    }
+
+
+    public function resetPassword(?User $user, array $data): User
+    {
+
+        $otpCode = $this->getValidOtp($user->id, $data['otp'], OtpType::PASSWORD_RESET_CODE);
+
+        // If no valid OTP is found, throw a validation exception
+        if (!$otpCode) {
+            throw ValidationException::withMessages([
+                'otp' => __('app.invalid_otp')
+            ]);
+        }
+
+        // Begin transaction to ensure atomicity of the update operations
+        return DB::transaction(function () use ($user, $otpCode, $data) {
+            // Update the user's password field to the current timestamp
+            $user->update([
+                'password' => $data['password'],
+            ]);
+
+            // Deactivate the OTP by setting is_active to inactive
+            $otpCode->update([
+                'is_active' => Otp::STATUS_INACTIVE,
+            ]);
+
+            // forget cache
+            Cache::forget(self::HASH_METHOD . self::AUTH_CACHE_KEY . $data['otp']);
 
             // Return the updated user object
             return $user;
@@ -133,5 +215,26 @@ class AuthService implements AuthServiceInterface
     private function generateUserToken(User $user): string
     {
         return $user->createToken('auth_token')->plainTextToken;
+    }
+
+    /**
+     * Retrieve a valid OTP for a given user ID and OTP code.
+     *
+     * This method fetches a valid OTP for the given user and OTP code.
+     * By default, it looks for verification codes unless a different OTP type is specified.
+     *
+     * @param int $userId The ID of the user.
+     * @param int $otp The OTP code to be verified.
+     * @param OtpType $type The type of OTP being verified. Defaults to OtpType::VERIFICATION_CODE.
+     * @return Otp|null Returns the OTP if it exists and is valid; otherwise, returns null.
+     */
+    private function getValidOtp(int $userId, int $otp, OtpType $type = OtpType::VERIFICATION_CODE): ?Otp
+    {
+        return Otp::whereUserId($userId)
+            ->whereCode($otp)
+            ->whereIsActive(Otp::STATUS_ACTIVE)
+            ->whereType($type)
+            ->where('expires_at', '>', now())
+            ->first();
     }
 }

@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Auth\OtpType;
+use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Requests\Auth\LoginUserRequest;
 use App\Http\Requests\Auth\VerifyUserRequest;
 use App\Interfaces\Auth\AuthServiceInterface;
+use Illuminate\Validation\ValidationException;
 use App\Http\Requests\Auth\RegisterUserRequest;
+use App\Http\Requests\Auth\PasswordResetRequest;
 
 class AuthController extends Controller
 {
@@ -76,6 +81,16 @@ class AuthController extends Controller
         );
     }
 
+    /**
+     * Send OTP to verify the user.
+     *
+     * This method generates a one-time password (OTP) and sends it to the
+     * authenticated user for verification purposes. It returns a success response
+     * if the OTP was sent successfully.
+     *
+     * @param VerifyUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function otp(VerifyUserRequest $request): \Illuminate\Http\JsonResponse
     {
         $user = $request->getAuthenticatedUser();
@@ -86,15 +101,91 @@ class AuthController extends Controller
         return response()->success(__('app.otp_sent_success'));
     }
 
+    /**
+     * Verify the OTP for the authenticated user.
+     *
+     * This method validates the OTP entered by the user and verifies
+     * the OTP for the authenticated user. If the OTP is valid, it returns
+     * a success response with the user data.
+     *
+     * @param VerifyUserRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function verify(VerifyUserRequest $request): \Illuminate\Http\JsonResponse
     {
         $otp = $request->validatedOtp();
-
         $user = $request->getAuthenticatedUser();
 
         $user = $this->authService->verifyOtp($user, $otp);
 
         return response()->success(__('app.verification_success'), ['user' => new UserResource($user)]);
     }
+
+    /**
+     * Send OTP for resetting the password.
+     *
+     * This method generates a one-time password (OTP) for resetting the
+     * user's password and caches the OTP with the user's encrypted data.
+     * It then sends the OTP to the user's email. If this is a password reset request,
+     * the response indicates success.
+     *
+     * @param PasswordResetRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resetOtp(PasswordResetRequest $request): \Illuminate\Http\JsonResponse
+    {
+        // Fetch the user to reset the password
+        $user = $request->getResetUser();
+
+        // Generate a new OTP code
+        $code = $request->generateOtp();
+
+        // Cache the user data using the OTP code
+        Cache::put(hash(AuthService::HASH_METHOD, AuthService::AUTH_CACHE_KEY . $code), encrypt($user), AuthService::AUTH_CACHE_SECONDS);
+
+        // Determine if this is a password reset request or success email
+        $isRequest = $request->routeIs(config('routes.reset_otp'));
+
+        // Send the OTP to the user
+        $this->authService->sendOtp($user, $code, OtpType::PASSWORD_RESET_CODE, $isRequest);
+
+        return response()->success(__('app.reset_password_sent_success'));
+    }
+
+    /**
+     * Reset the user's password using OTP.
+     *
+     * This method retrieves the cached user data using the OTP provided
+     * by the user, verifies the OTP, and allows the user to reset their password.
+     * It decrypts the cached user data, performs the password reset, and returns
+     * a success response with the updated user information.
+     *
+     * @param PasswordResetRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resetPassword(PasswordResetRequest $request): \Illuminate\Http\JsonResponse
+    {
+        $validatedData = $request->validated();
+        $code = $validatedData['otp'];
+
+        // Generate the cache key using the hashed OTP code
+        $cacheKey = hash(AuthService::HASH_METHOD, AuthService::AUTH_CACHE_KEY . $code);
+
+        // Retrieve the cached user
+        $user = Cache::get($cacheKey);
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'otp' => __('app.invalid_otp')
+            ]);
+        }
+
+        // Decrypt the user data
+        $decryptedUser = decrypt($user);
+
+        // Reset the password
+        $this->authService->resetPassword($decryptedUser, $validatedData);
+
+        return response()->success(__('app.password_reset_success'), ['user' => new UserResource($decryptedUser)]);
+    }
 }
-// 838736

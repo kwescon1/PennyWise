@@ -22,8 +22,12 @@ return [
     'resource_not_found' => 'Resource not found!',
     'validation_failed' => 'Validation failed!',
     'auth_user_not_found' => 'User not found!',
-    'opt_mail_subject' => 'Your ' . config('app.name') . ' Verification Code',
+    'opt_mail_subject' => config('app.name') . ' Verification Code',
     'otp_sent_success' => 'Verification Code Sent!',
+    'reset_password_sent_success' => 'Password Reset Code Sent!',
     'invalid_otp' => 'Invalid Verification Code!',
     'verification_success' => 'Verification successful!',
+    'password_reset_success' => 'Password Reset Successful!',
+    'reset_password_request_mail_subject' => config('app.name') . ' Password Reset Code',
+    'reset_password_success_mail_subject' => config('app.name') . ' Password Reset Successful',
 ];

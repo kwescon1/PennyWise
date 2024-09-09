@@ -73,4 +73,20 @@ class BaseUserRequest extends FormRequest
     {
         return random_int(100000, 999999);
     }
+
+    /**
+     * Determine if the login input is an email or a username.
+     *
+     * This method checks whether the provided login input is a valid email
+     * address. If it is, the method returns 'email'; otherwise, it returns
+     * 'username'. This helps in querying the user by the correct field.
+     *
+     * @return string
+     */
+    public function loginField(): string
+    {
+        $login = $this->sanitizeLoginInput();
+
+        return filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+    }
 }
