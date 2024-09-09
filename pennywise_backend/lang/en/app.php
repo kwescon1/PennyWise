@@ -30,4 +30,5 @@ return [
     'password_reset_success' => 'Password Reset Successful!',
     'reset_password_request_mail_subject' => config('app.name') . ' Password Reset Code',
     'reset_password_success_mail_subject' => config('app.name') . ' Password Reset Successful',
+    'password_reset_success_mail_subject' => config('app.name') . ' Password Reset Successful',
 ];
