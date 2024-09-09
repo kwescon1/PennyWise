@@ -17,5 +17,6 @@ class Otp extends Model
     protected $guarded = ['id', 'created_at', 'updated_at', 'deleted_at'];
     protected $casts = [
         "type" => OtpType::class,
+        "expires_at" =>"datetime",
     ];
 }
