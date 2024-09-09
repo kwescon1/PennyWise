@@ -14,6 +14,9 @@ pennywise_backend/
 │   └── ...
 ├── docker-compose.yml         # Docker Compose file for orchestrating containers
 ├── app/                       # Laravel application files
+├── docs/                      # Documentation for API routes and other functionalities
+│   ├── authentication/                  # Authentication-related route documentation
+│   │   └── README.md          # Documentation for authentication-related routes
 ├── .env.example               # Example environment configuration file
 ├── .env                       # Environment configuration file (to be set up)
 ├── README.md                  # This README file
@@ -182,6 +185,38 @@ Before setting up the backend, follow these steps to configure the environment:
 ## Communication with the Frontend
 
 The API provides RESTful endpoints that the Flutter frontend interacts with. Ensure that the Flutter app is configured to communicate with the backend API, typically at `https://localhost:8889` (or the appropriate URL if deployed).
+
+## Route Documentation
+
+All API routes are documented in the `docs` folder. Each section contains detailed information about the available endpoints, including authentication, expense management, and budgeting features.
+
+### **Authentication Routes**
+
+You can find the documentation for the authentication routes in the `docs/auth/README.md`. This includes routes related to user registration, login, password reset, and OTP verification.
+
+### Example Documentation Structure:
+
+```plaintext
+docs/
+│
+├── auth/
+│   ├── README.md          # Documentation for authentication-related routes
+│   └── register.md        # Separate doc for registration (optional)
+├── expense/
+│   ├── README.md          # Documentation for expense-related routes
+└── budget/
+    └── README.md          # Documentation for budgeting-related routes (future scope)
+```
+
+---
+
+### Step 4: Viewing API Documentation
+
+You can access detailed documentation about the API routes inside the `docs` folder:
+
+-   **Authentication**: [docs/auth/README.md](docs/authentication/README.md)
+
+Each of these files will describe the endpoints, request formats, expected responses, and error codes.
 
 ## Additional Commands
 
