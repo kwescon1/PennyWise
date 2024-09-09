@@ -188,20 +188,19 @@ The API provides RESTful endpoints that the Flutter frontend interacts with. Ens
 
 ## Route Documentation
 
-All API routes are documented in the `docs` folder. Each section contains detailed information about the available endpoints, including authentication, expense management, and budgeting features.
+All API routes are documented in the `docs` folder. Each section contains detailed information about the available endpoints, including authentication and others.
 
 ### **Authentication Routes**
 
-You can find the documentation for the authentication routes in the `docs/auth/README.md`. This includes routes related to user registration, login, password reset, and OTP verification.
+You can find the documentation for the authentication routes in the `docs/authentication/README.md`. This includes routes related to user registration, login, password reset, and OTP verification.
 
 ### Example Documentation Structure:
 
 ```plaintext
 docs/
 │
-├── auth/
+├── authendtication/
 │   ├── README.md          # Documentation for authentication-related routes
-│   └── register.md        # Separate doc for registration (optional)
 ├── expense/
 │   ├── README.md          # Documentation for expense-related routes
 └── budget/
@@ -214,7 +213,7 @@ docs/
 
 You can access detailed documentation about the API routes inside the `docs` folder:
 
--   **Authentication**: [docs/auth/README.md](docs/authentication/README.md)
+-   **Authentication**: [docs/authentication/README.md](docs/authentication/README.md)
 
 Each of these files will describe the endpoints, request formats, expected responses, and error codes.
 
