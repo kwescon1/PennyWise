@@ -25,7 +25,33 @@ services:
     volumes:
       - ./:/var/www/pennywise
       - ./docker-files/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - pennywise
 
+  # queue worker
+  queue-worker:
+    build:
+      context: .
+      dockerfile: ./docker-files/php/8.2/Dockerfile
+    container_name: pennywise_queue_worker
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www/pennywise
+    command: php artisan queue:work --tries=3 --timeout=90
+    depends_on:
+      - app
+      - redis
+      - db
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USER: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./:/var/www/pennywise
+      - ./docker-files/php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
       - pennywise
 
@@ -98,3 +124,4 @@ services:
       - ./storage/redis/data:/data
     networks:
       - pennywise
+# TODO setup cron service
