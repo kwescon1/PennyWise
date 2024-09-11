@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,9 +13,11 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+// Apply TestCase to both Feature and Unit tests
+pest()->extend(Tests\TestCase::class)->in('Feature', 'Unit');
+
+// Apply RefreshDatabase only to Feature tests (or other specific test directories that need database)
+uses(RefreshDatabase::class)->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
