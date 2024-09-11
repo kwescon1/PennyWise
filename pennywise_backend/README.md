@@ -168,7 +168,15 @@ Before setting up the backend, follow these steps to configure the environment:
     composer install
     ```
 
-4. **View Logs**:
+4. **Run Tests**:
+
+    - Once inside the API shell, you can run the tests using:
+
+    ```bash
+    php artisan test
+    ```
+
+5. **View Logs**:
 
     - You can monitor the real-time logs of the API container using:
 
@@ -176,8 +184,10 @@ Before setting up the backend, follow these steps to configure the environment:
     make logs-api
     ```
 
-5. **Stop the API**:
+6. **Stop the API**:
+
     - When you are done, you can stop and remove the API container with:
+
     ```bash
     make down-api
     ```
