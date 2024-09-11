@@ -10,11 +10,9 @@ use App\Jobs\Auth\SendPasswordResetEmail;
 use App\Jobs\Auth\SendOtpVerificationEmail;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
-
-
 // Shared setup logic
 beforeEach(function () {
-    //Assignment of the mockOtp property
+    // Assignment of the mockOtp property using Mockery
     $this->mockOtp = Mockery::mock('alias:' . Otp::class, OtpStub::class);
 
     // Common user and auth service setup
@@ -25,25 +23,13 @@ beforeEach(function () {
     $this->mockOtpCreationAndEmailDispatch = function ($count) {
         // Mock OTP count in the last 30 mins.
         $this->mockOtp->shouldReceive('where->where->count')->andReturn($count);
-
-        // Mock the creation of the OTP
-        $this->mockOtp->shouldReceive('create')->once();
-
-        // Mock email dispatch
-        Queue::fake();
-    };
-
-    // Define the helper function as a closure to access $this
-    $this->mockOtpCreation = function ($count) {
-        // Mock OTP count in the last 30 mins.
-        $this->mockOtp->shouldReceive('where->where->count')->andReturn($count);
     };
 });
 
 // Test for OTP limit exceeded
 it('throws too many request exception when OTP limit is exceeded', function () {
     // Set the OTP count to 3, indicating the limit has been exceeded
-    ($this->mockOtpCreation)(3);
+    ($this->mockOtpCreationAndEmailDispatch)(3);
 
     // Expect an exception
     $this->expectException(TooManyRequestsHttpException::class);
@@ -54,8 +40,14 @@ it('throws too many request exception when OTP limit is exceeded', function () {
 
 // Test for OTP verification email
 it('dispatches OTP verification email when limit is not exceeded', function () {
+    // Mock email dispatch
+    Queue::fake();
+
     // Set OTP count to 1, within the allowed limit
     ($this->mockOtpCreationAndEmailDispatch)(1);
+
+    // Mock the creation of the OTP
+    $this->mockOtp->shouldReceive('create')->once();
 
     // Call the method for OTP verification
     $this->authService->sendOtp($this->user, '123456');
@@ -66,8 +58,14 @@ it('dispatches OTP verification email when limit is not exceeded', function () {
 
 // Test for OTP password reset email
 it('dispatches OTP password reset email when limit is not exceeded', function () {
+    // Mock email dispatch
+    Queue::fake();
+
     // Set OTP count to 1, within the allowed limit
     ($this->mockOtpCreationAndEmailDispatch)(1);
+
+    // Mock the creation of the OTP
+    $this->mockOtp->shouldReceive('create')->once();
 
     // Call the method for password reset
     $this->authService->sendOtp($this->user, '123456', OtpType::PASSWORD_RESET_CODE);
