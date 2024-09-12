@@ -1,0 +1,46 @@
+services:
+  # Override the app service for testing
+  app:
+    environment:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: test_db # Use test-db for testing
+      DB_PORT: 3306
+      DB_DATABASE:
+      DB_USERNAME:
+      DB_PASSWORD:
+
+  # Override queue worker settings for testing
+  queue-worker:
+    environment:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: test-db
+      DB_PORT: 3306
+      DB_DATABASE:
+      DB_USERNAME:
+      DB_PASSWORD:
+    command: php artisan queue:work --tries=1 --timeout=30 # Faster retries for testing
+
+  # Test database service
+  test-db:
+    image: mysql:latest
+    container_name: pennywise_test_db
+    environment:
+      MYSQL_DATABASE:
+      MYSQL_USER:
+      MYSQL_PASSWORD:
+      MYSQL_ROOT_PASSWORD:
+    ports:
+      - "8893:3306" # Different port for test DB
+    volumes:
+      - ./storage/test_dbdata:/var/lib/mysql
+    networks:
+      - pennywise
+
+  redis:
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_DRIVER: array # Use in-memory caching for testing
+      QUEUE_CONNECTION: sync # Process jobs immediately in tests
