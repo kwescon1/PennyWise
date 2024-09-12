@@ -78,15 +78,12 @@ class AuthService implements AuthServiceInterface
      */
     public function sendOtp(User $user, string $code, OtpType $type = OtpType::VERIFICATION_CODE, bool $isRequest = false): void
     {
-
         // check for spam and throttle
         $tries = 3;
         $time = Carbon::now()->subMinutes(30);
 
-        // Count the number of OTPs created in the last 30 minutes for this user and type
-        $count = Otp::where(['user_id' => $user->id, 'type' => $type, 'is_active' => Otp::STATUS_ACTIVE])
-            ->where('created_at', '>=', $time)
-            ->count();
+        // Filtering OTPs created in the last 30 minutes
+        $count = $user->otps()->activeOtps($type)->recent($time)->count();
 
         if ($count >= $tries) {
             throw new TooManyRequestsHttpException(
@@ -95,10 +92,8 @@ class AuthService implements AuthServiceInterface
             );
         }
 
-
         // Store OTP details in the database
-        Otp::create([
-            'user_id' => $user->id,
+        $user->otps()->create([
             'type' => $type,
             'code' => $code,
             'expires_at' => Carbon::now()->addMinutes(10),
@@ -146,7 +141,7 @@ class AuthService implements AuthServiceInterface
     public function verifyOtp(User $user, int $otp, OtpType $type = OtpType::VERIFICATION_CODE): User
     {
         // Retrieve the OTP that matches the user ID, code, and is still active and not expired
-        $otpCode = $this->getValidOtp($user->id, $otp, $type);
+        $otpCode = $this->getValidOtp($user, $otp, $type);
 
         // If no valid OTP is found, throw a validation exception
         if (!$otpCode) {
@@ -176,7 +171,7 @@ class AuthService implements AuthServiceInterface
     public function resetPassword(?User $user, array $data): User
     {
 
-        $otpCode = $this->getValidOtp($user->id, $data['otp'], OtpType::PASSWORD_RESET_CODE);
+        $otpCode = $this->getValidOtp($user, $data['otp'], OtpType::PASSWORD_RESET_CODE);
 
         // If no valid OTP is found, throw a validation exception
         if (!$otpCode) {
@@ -220,23 +215,18 @@ class AuthService implements AuthServiceInterface
     }
 
     /**
-     * Retrieve a valid OTP for a given user ID and OTP code.
+     * Retrieve a valid OTP for a given user and OTP code.
      *
      * This method fetches a valid OTP for the given user and OTP code.
-     * By default, it looks for verification codes unless a different OTP type is specified.
+     * It verifies that the OTP is of the specified type, active, and not expired.
      *
-     * @param int $userId The ID of the user.
+     * @param User $user The user for whom the OTP is being verified.
      * @param int $otp The OTP code to be verified.
      * @param OtpType $type The type of OTP being verified. Defaults to OtpType::VERIFICATION_CODE.
-     * @return Otp|null Returns the OTP if it exists and is valid; otherwise, returns null.
+     * @return Otp|null Returns the OTP if it exists, is active, and has not expired; otherwise, returns null.
      */
-    private function getValidOtp(int $userId, int $otp, OtpType $type = OtpType::VERIFICATION_CODE): ?Otp
+    private function getValidOtp(User $user, int $otp, OtpType $type = OtpType::VERIFICATION_CODE): ?Otp
     {
-        return Otp::whereUserId($userId)
-            ->whereCode($otp)
-            ->whereIsActive(Otp::STATUS_ACTIVE)
-            ->whereType($type)
-            ->where('expires_at', '>', now())
-            ->first();
+        return $user->otps()->whereCode($otp)->activeOtps($type)->notExpired()->first();
     }
 }
