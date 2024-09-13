@@ -40,7 +40,7 @@ it('registers a user and dispatches OTP email', function () {
 
     $response = ($this->registerUser)($user); // Call helper to register the user
 
-    $response->assertStatus(201); // Assert that the user was created successfully
+    $response->assertCreated();
 
     // Assert the structure of the response
     expect($response->json('data'))->toHaveKeys(['user', 'token']);
