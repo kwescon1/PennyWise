@@ -50,5 +50,5 @@ it('logs user in and prompts user to verify account if not verified', function (
 it('throws an unauthorized error when input is invalid', function () {
     $response = ($this->loginUser)(($this->loginData)($this->user['username'], Str::random(12)));
 
-    $response->assertUnauthorized();
+    $response->assertUnauthorized()->assertJsonPath('error', __('auth.failed'));
 });
