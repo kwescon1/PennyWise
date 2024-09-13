@@ -192,8 +192,9 @@ class AuthService implements AuthServiceInterface
                 'is_active' => Otp::STATUS_INACTIVE,
             ]);
 
+            $cacheKey = hash(self::HASH_METHOD, self::AUTH_CACHE_KEY . $data['otp']);
             // forget cache
-            Cache::forget(self::HASH_METHOD . self::AUTH_CACHE_KEY . $data['otp']);
+            Cache::forget($cacheKey);
 
             // Dispatch the success email job (queueing it)
             dispatch(new SendPasswordResetSuccessfulEmail($user));
