@@ -12,7 +12,7 @@ use App\Jobs\Auth\SendPasswordResetEmail;
 use App\Jobs\Auth\SendOtpVerificationEmail;
 use App\Interfaces\Auth\AuthServiceInterface;
 use Illuminate\Validation\ValidationException;
-use App\Jobs\Auth\SendPasswordResetSucceessfulEmail;
+use App\Jobs\Auth\SendPasswordResetSuccessfulEmail;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class AuthService implements AuthServiceInterface
@@ -196,7 +196,7 @@ class AuthService implements AuthServiceInterface
             Cache::forget(self::HASH_METHOD . self::AUTH_CACHE_KEY . $data['otp']);
 
             // Dispatch the success email job (queueing it)
-            dispatch(new SendPasswordResetSucceessfulEmail($user));
+            dispatch(new SendPasswordResetSuccessfulEmail($user));
 
             // Return the updated user object
             return $user;

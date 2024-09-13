@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
-use App\Jobs\Auth\SendPasswordResetSucceessfulEmail;
+use App\Jobs\Auth\SendPasswordResetSuccessfulEmail;
 
 beforeEach(function () {
     // Common user and auth service setup
@@ -52,7 +52,7 @@ beforeEach(function () {
 //     $this->authService->resetPassword($this->user, $this->data);
 
 //     // Assert that the password reset success email was dispatched
-//     Queue::assertPushed(SendPasswordResetSucceessfulEmail::class);
+//     Queue::assertPushed(SendPasswordResetSuccessfulEmail::class);
 // });
 
 it('throws validation error when OTP is invalid', function () {
