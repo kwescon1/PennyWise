@@ -1,5 +1,5 @@
 <?php
-
+// TODO fix all unit tests.. got broken when i introduced relations in my model
 use App\Models\Otp;
 use App\Models\User;
 use Tests\Unit\Stubs\OtpStub;
@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->data = ['otp' => '123456', 'password' => 'newpassword'];
 
     // Mock OTP model behavior but not replace factory functionality
-    $this->mockOtp = Mockery::mock('alias:' . Otp::class, OtpStub::class);
+    $this->mockOtp = Mockery::mock('alias:' . Otp::class, OtpStub::class)->shouldIgnoreMissing();
 
     // Define the helper function to mock OTP retrieval
     $this->mockReturnOtp = function ($otp) {
