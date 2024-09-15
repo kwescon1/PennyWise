@@ -1,65 +1,93 @@
 <?php
-// TODO fix all unit tests.. got broken when i introduced relations in my model
+
 use App\Models\Otp;
 use App\Models\User;
-use Tests\Unit\Stubs\OtpStub;
+use App\Enums\Auth\OtpType;
 use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use App\Jobs\Auth\SendPasswordResetSuccessfulEmail;
 
 beforeEach(function () {
-    // Common user and auth service setup
+    // Mock the HasMany relation (otps) between the User and OTP models
+    $this->otpRelation = Mockery::mock(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+
+    // Mock the Eloquent Builder to simulate query behavior on the OTP model
+    $this->otpQueryBuilder = Mockery::mock(\Illuminate\Database\Eloquent\Builder::class);
+
+    // Initialize AuthService
     $this->authService = new AuthService();
-    $this->user = User::factory()->make(['id' => random_int(1, 10)]);
 
-    // Sample data for password reset
-    $this->data = ['otp' => '123456', 'password' => 'newpassword'];
+    // Mock the User model
+    $this->user = Mockery::mock(User::class);
 
-    // Mock OTP model behavior but not replace factory functionality
-    $this->mockOtp = Mockery::mock('alias:' . Otp::class, OtpStub::class)->shouldIgnoreMissing();
+    // Mock the OTP model
+    $this->otpModel = Mockery::mock(Otp::class);
 
-    // Define the helper function to mock OTP retrieval
+    // Mock the behavior of the otps relationship on the user model
+    $this->user->shouldReceive('otps')->andReturn($this->otpRelation);
+
+    // Mock the query chain on the OTP relation
+    $this->otpRelation->shouldReceive('whereCode->activeOtps->notExpired')->once()->andReturn($this->otpQueryBuilder);
+
+    // Define a helper function to mock OTP retrieval
     $this->mockReturnOtp = function ($otp) {
-        // Mock the OTP retrieval with method chaining
-        $this->mockOtp->shouldReceive('whereUserId->whereCode->whereIsActive->whereType->where->first')->once()->andReturn($otp);
+        // Mock the first() method to return the OTP object
+        $this->otpQueryBuilder->shouldReceive('first')->once()->andReturn($otp);
     };
 });
 
-// TODO
-// it('successfully resets password with valid OTP', function () {
-//     // Generate valid OTP data using factory (outside of mock context)
-//     $otpData = Otp::factory($this->mockOtp)->make(['is_active' => Otp::STATUS_ACTIVE]);
+/**
+ * Test: Successfully reset password with a valid OTP
+ * This test simulates the behavior when a valid OTP is provided,
+ * ensuring that the user's password is updated, the OTP is deactivated,
+ * and the success email is sent.
+ */
+it('successfully resets password with valid OTP', function () {
+    // Mock OTP retrieval
+    ($this->mockReturnOtp)($this->otpModel);
 
-//     // Use the helper to mock the retrieval of this OTP data
-//     ($this->mockReturnOtp)($otpData);
+    // Mock transaction behavior
+    DB::shouldReceive('transaction')->once()->andReturnUsing(function ($callback) {
+        return $callback();
+    });
 
-//     // Mock transaction and password update
-//     DB::shouldReceive('transaction')->once()->andReturnUsing(function ($callback) {
-//         return $callback();
-//     });
+    // Mock user and OTP update methods
+    $this->user->shouldReceive('update')->once();
+    $this->otpModel->shouldReceive('update')->once();
 
-//     // Mock cache forget
-//     Cache::shouldReceive('forget')->once();
+    // Mock cache forget behavior
+    Cache::shouldReceive('forget')->once();
 
-//     // Mock email dispatch
-//     Queue::fake();
+    // Mock email dispatch
+    Queue::fake();
 
-//     // Call the resetPassword method in the AuthService
-//     $this->authService->resetPassword($this->user, $this->data);
+    // Call the resetPassword method in the AuthService
+    $this->authService->resetPassword($this->user, ['otp' => '123456', 'password' => '6786ghjfg@jhn.']);
 
-//     // Assert that the password reset success email was dispatched
-//     Queue::assertPushed(SendPasswordResetSuccessfulEmail::class);
-// });
+    // Assert the email job was pushed to the queue
+    Queue::assertPushed(SendPasswordResetSuccessfulEmail::class);
 
+    // Assert that the user model called the `otps()` relation and the `update()` method
+    $this->user->shouldHaveReceived('otps')->once();
+    $this->user->shouldHaveReceived('update')->once();
+    $this->otpModel->shouldHaveReceived('update')->once();
+});
+
+/**
+ * Test: Throws validation error when OTP is invalid
+ * This test checks if the system correctly throws a ValidationException
+ * when an invalid or non-existent OTP is provided during password reset.
+ */
 it('throws validation error when OTP is invalid', function () {
-
+    // Simulate OTP retrieval returning null (invalid OTP)
     ($this->mockReturnOtp)(null);
 
+    // Expect a validation exception
     $this->expectException(ValidationException::class);
 
-    $this->authService->resetPassword($this->user, $this->data);
+    // Call the resetPassword method in the AuthService
+    $this->authService->resetPassword($this->user, ['otp' => '123456', 'password' => '6786ghjfg@jhn.']);
 });
