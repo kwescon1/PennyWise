@@ -17,10 +17,10 @@ beforeEach(function () {
     $this->user = Mockery::mock(User::class);
 
     // Mock the HasMany relation (otps) between the User and OTP models
-    $this->otpRelation = Mockery::mock('alias:Illuminate\Database\Eloquent\Relations\HasMany');
+    $this->otpRelation = Mockery::mock(Illuminate\Database\Eloquent\Relations\HasMany::class);
 
     // Mock the Eloquent Builder to simulate query behavior on the OTP model
-    $this->otpQueryBuilder = Mockery::mock('alias:Illuminate\Database\Eloquent\Builder');
+    $this->otpQueryBuilder = Mockery::mock(\Illuminate\Database\Eloquent\Builder::class);
 
     // Return the mock relation (otps) whenever the otps method is called on the User model
     $this->user->shouldReceive('otps')->andReturn($this->otpRelation);
