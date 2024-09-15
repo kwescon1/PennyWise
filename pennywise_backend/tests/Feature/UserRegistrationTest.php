@@ -15,7 +15,7 @@ beforeEach(function () {
 
     // Helper to perform a registration request
     $this->registerUser = function ($user) {
-        return $this->post(route($this->routeNames['register']), $user);
+        return $this->postJson(route($this->routeNames['register']), $user);
     };
 });
 

@@ -12,7 +12,7 @@ beforeEach(function () {
 
     // Helper function for login request
     $this->loginUser = function (array $data) {
-        return $this->post(route($this->routeNames['login']), $data);
+        return $this->postJson(route($this->routeNames['login']), $data);
     };
 
     // Helper function for login data

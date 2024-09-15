@@ -27,7 +27,7 @@ it('sends a valid otp to reset password', function () {
 
     Cache::shouldReceive('put');
 
-    $response = $this->post(route($this->routeNames['reset_otp']), ['login' => $this->user['username']]);
+    $response = $this->postJson(route($this->routeNames['reset_otp']), ['login' => $this->user['username']]);
 
     $response->assertOk()->assertJsonPath('message', __('app.reset_password_sent_success'));
 
@@ -37,7 +37,7 @@ it('sends a valid otp to reset password', function () {
 });
 
 it('throws validation error for incorrect user', function () {
-    $response = $this->post(route($this->routeNames['reset_otp']), ['login' => fake()->userName()]);
+    $response = $this->postJson(route($this->routeNames['reset_otp']), ['login' => fake()->userName()]);
 
     $response->assertStatus(422)->assertJsonFragment([
         "message" => __('app.validation_failed')
@@ -60,7 +60,7 @@ it('verifies OTP successfully and dispatches email', function () {
     $password = Str::password();
 
     // Send the password reset request
-    $response = $this->post(route($this->routeNames['reset_password']), [
+    $response = $this->postJson(route($this->routeNames['reset_password']), [
         'otp' => $this->otpData['code'],
         'password' => $password,
         'password_confirmation' => $password
@@ -84,7 +84,7 @@ it('throws validation exception on invalid OTP or password mismatch', function (
     $mismatchedPassword = Str::password();
 
     // Invalid OTP
-    $response = $this->post(route($this->routeNames['reset_password']), [
+    $response = $this->postJson(route($this->routeNames['reset_password']), [
         'otp' => $invalidOtp,
         'password' => $password,
         'password_confirmation' => $password
@@ -95,7 +95,7 @@ it('throws validation exception on invalid OTP or password mismatch', function (
     ]);
 
     // Password mismatch
-    $response = $this->post(route($this->routeNames['reset_password']), [
+    $response = $this->postJson(route($this->routeNames['reset_password']), [
         'otp' => $this->otpData['code'],
         'password' => $password,
         'password_confirmation' => $mismatchedPassword
