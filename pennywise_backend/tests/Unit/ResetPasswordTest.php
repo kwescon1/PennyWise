@@ -2,7 +2,6 @@
 
 use App\Models\Otp;
 use App\Models\User;
-use App\Enums\Auth\OtpType;
 use App\Services\Auth\AuthService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
