@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pennywise/resources/app_colours.dart';
 import 'package:pennywise/resources/app_routes.dart';
 import 'package:pennywise/resources/app_strings.dart';
+import 'package:pennywise/resources/views/auth/login.dart';
+import 'package:pennywise/resources/views/auth/signup.dart';
 import 'package:pennywise/resources/views/onboarding/splash.dart';
 import 'package:pennywise/resources/views/onboarding/walkthrough.dart';
 
@@ -27,7 +29,9 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (context) =>  const SplashScreen(),// splash screen
-        AppRoutes.walkthrough: (context) =>  const WalkThroughScreen()// walkthrough screen
+        AppRoutes.walkthrough: (context) =>  const WalkThroughScreen(),// walkthrough screen
+        AppRoutes.signup: (context) =>  const SignupScreen(),// sign up screen
+        AppRoutes.login: (context) =>  const LoginScreen(),// login screen
       },
     );
   }
