@@ -1,6 +1,6 @@
 /**
 This class defines the main string constants for the application.
- */ 
+ */
 
 class AppStrings{
   static String appName = 'PennyWise';
@@ -12,4 +12,17 @@ class AppStrings{
   static String walkthroughDescription3 = 'Set a budget for each category to stay in control of your finances';
   static String signUp = "Sign Up";
   static String login = "Login";
+  static String labelFirstName = "First Name";
+  static String labelLastName = "Last Name";
+  static String labelUsername = "Username";
+  static String labelEmail = "Email Address";
+  static String labelPassword = "Password";
+  static String labelConfirmPassword = "Confirm Password";
+  static String labelUsernameOrEmail = "Username or Email Address";
+  static String agreeText = "By signing up, you agree to the";
+  static String termsAndPrivacy = "Terms of Service and Privacy Policy";
+  static String orWith = "Or with";
+  static String signUpWithGoogle = "Sign Up with Google";
+  static String alreadyHaveAnAccount = "Already have an account?";
+  static String fieldIsRequired = "is required";
 }
