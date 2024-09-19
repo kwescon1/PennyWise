@@ -37,5 +37,21 @@ class AppStyles {
     );
   }
 
+  static TextStyle appBarTitle({double size = 18, Color color = Colors.black}) {
+    return TextStyle(
+      color: color,
+      fontSize: size,
+      fontWeight: FontWeight.w500
+    );
+  }
+
+  static TextStyle medium({double size = 16, Color color = Colors.black}) {
+    return TextStyle(color: color, fontSize: size, fontWeight: FontWeight.w500);
+  }
+
+  static TextStyle bold({double size = 16, Color color = Colors.black}) {
+    return TextStyle(color: color, fontSize: size, fontWeight: FontWeight.bold);//bold is same as w700
+  }
+
 
 }
