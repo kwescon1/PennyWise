@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pennywise/resources/app_colours.dart';
+import 'package:pennywise/resources/app_routes.dart';
+import 'package:pennywise/resources/app_spacing.dart';
 import 'package:pennywise/resources/app_strings.dart';
 import 'package:pennywise/resources/app_styles.dart';
 import 'package:pennywise/resources/views/components/ui/button.dart';
@@ -35,15 +37,14 @@ class _WalkThroughScreenState extends State<WalkThroughScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(
-                child: pages() ),
-            const SizedBox(height: 24),
+            Expanded(child: pages()),
+            AppSpacing.vertical(),
             Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
                   indicators(),
-                  const SizedBox(height: 24),
+                  AppSpacing.vertical(),
                   buttons(),
                 ],
               ),
@@ -72,28 +73,29 @@ class _WalkThroughScreenState extends State<WalkThroughScreen> {
                     ? AppColours.primaryColour
                     : AppColours.primaryColourLight),
           ),
-          if (i < slides.length - 1) const SizedBox(width: 8)
+          if (i < slides.length - 1) AppSpacing.horizontal(size: 8)
         ]
       ],
     );
   }
 
-  Widget buttons(){
+  Widget buttons() {
     return Column(
       children: [
         ButtonComponent(
-          label: AppStrings.signUp,
-        ),
-        const SizedBox(height: 24),
+            label: AppStrings.signUp,
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.signup)),
+        AppSpacing.vertical(),
         ButtonComponent(
           type: ButtonType.secondary,
           label: AppStrings.login,
+          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.login)
         ),
       ],
     );
   }
 
-  Widget pages(){
+  Widget pages() {
     return PageView.builder(
       controller: pageController,
       itemBuilder: (context, index) {
@@ -101,24 +103,27 @@ class _WalkThroughScreenState extends State<WalkThroughScreen> {
           shrinkWrap: true,
           padding: const EdgeInsets.all(24),
           children: [
-            const SizedBox(height: 48),
+            AppSpacing.vertical(size: 48),
             Center(
-              child: Image.asset(slides[index].image,width: MediaQuery.of(context).size.width/1.5,),
+              child: Image.asset(
+                slides[index].image,
+                width: MediaQuery.of(context).size.width / 1.5,
+              ),
             ),
             // define space
-            const SizedBox(height: 24),
+            AppSpacing.vertical(),
             Text(slides[index].title,
                 style: AppStyles.title1(), textAlign: TextAlign.center),
-            const SizedBox(height: 16),
+            AppSpacing.vertical(size: 16),
             Text(slides[index].description,
-                style: AppStyles.regular1(color: AppColours.light20,weight:FontWeight.w500),
+                style: AppStyles.regular1(
+                    color: AppColours.light20, weight: FontWeight.w500),
                 textAlign: TextAlign.center),
           ],
         );
       },
       itemCount: slides.length,
-      onPageChanged: (index) =>
-          setState(() => currentPageIndex = index),
+      onPageChanged: (index) => setState(() => currentPageIndex = index),
     );
   }
 }
