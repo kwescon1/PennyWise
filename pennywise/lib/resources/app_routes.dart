@@ -11,4 +11,5 @@ class AppRoutes {
   static String walkthrough = '/walkthrough';
   static String signup = '/signup';
   static String login = '/login';
+  static String verification = '/verification';
 }
