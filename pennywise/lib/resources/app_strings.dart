@@ -25,4 +25,7 @@ class AppStrings{
   static String signUpWithGoogle = "Sign Up with Google";
   static String alreadyHaveAnAccount = "Already have an account?";
   static String fieldIsRequired = "is required";
+  static String generalErrorMessage = "Oops! An error occurred, please try again.";
+  static String verification = "Verification";
+  static String inputIsRequired = ":input is required";
 }
