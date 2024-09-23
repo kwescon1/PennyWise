@@ -53,5 +53,6 @@ class AppStyles {
     return TextStyle(color: color, fontSize: size, fontWeight: FontWeight.bold);//bold is same as w700
   }
 
+  static TextStyle snackBar({double size = 18, Color color = Colors.white}) => medium(size: size,color: color);
 
 }
